@@ -1,0 +1,5 @@
+{
+  "name": "Interactive Particle Animation",
+  "description": "Upload your own background and watch this visually interactive particle system form constellations from text and react to your music. Built with React and HTML5 Canvas.",
+  "requestFramePermissions": []
+}
