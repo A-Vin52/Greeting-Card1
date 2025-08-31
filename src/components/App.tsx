@@ -4,6 +4,48 @@ import ParticleCanvas from './ParticleCanvas';
 
 type ParticleShape = 'circle' | 'square' | 'triangle';
 
+const musicAssets = [
+  { name: 'HB Hebrew', path: '/Greeting-Card1/assets/music/HB_Hebrew.mp3' },
+];
+
+const imageAssets = [
+  { name: 'Cosmos 1', path: '/Greeting-Card1/assets/images/Cosmos10.425Z.png' },
+  { name: 'Cosmos 2', path: '/Greeting-Card1/assets/images/Cosmos11.png' },
+  { name: 'Cosmos 3', path: '/Greeting-Card1/assets/images/Cosmos12.png' },
+  { name: 'Cosmos 4', path: '/Greeting-Card1/assets/images/Cosmos4.324Z.png' },
+  { name: 'Cosmos 5', path: '/Greeting-Card1/assets/images/Cosmos5.png' },
+  { name: 'Cosmos 6', path: '/Greeting-Card1/assets/images/Cosmos6.png' },
+  { name: 'Cosmos 7', path: '/Greeting-Card1/assets/images/Cosmos7.png' },
+  { name: 'Cosmos 8', path: '/Greeting-Card1/assets/images/Cosmos8.png' },
+  { name: 'Cosmos 9', path: '/Greeting-Card1/assets/images/Cosmos9.png' },
+];
+
+// Helper functions for UTF-8 safe Base64 encoding/decoding
+const utf8ToBase64 = (str: string): string => {
+  try {
+    // First, we use encodeURIComponent to get percent-encoded UTF-8,
+    // then we convert the percent encodings into raw bytes which can be fed to btoa.
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      (match, p1) => String.fromCharCode(parseInt(p1, 16))
+    ));
+  } catch (e) {
+    console.error("Failed to encode to Base64", e);
+    return "";
+  }
+};
+
+const base64ToUtf8 = (str: string): string => {
+  try {
+    // Going backwards: from bytestream, to percent-encoding, to original string.
+    return decodeURIComponent(atob(str).split('').map((c) => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  } catch (e) {
+    console.error("Failed to decode from Base64", e);
+    return "";
+  }
+};
+
 const App: React.FC = () => {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [musicSensitivity, setMusicSensitivity] = useState(1);
@@ -16,11 +58,54 @@ const App: React.FC = () => {
   const [musicUrl, setMusicUrl] = useState('');
   const [bgUrl, setBgUrl] = useState('');
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('text') || params.has('music') || params.has('image');
+  });
+  const [presentationDataLoaded, setPresentationDataLoaded] = useState(false);
+  const [shareableLink, setShareableLink] = useState('');
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const audioFileInputRef = useRef<HTMLInputElement>(null);
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const textParam = params.get('text');
+    const musicParam = params.get('music');
+    const imageParam = params.get('image');
+    const hebrewParam = params.get('hebrew');
+
+    if (textParam || musicParam || imageParam) {
+      setIsPresentationMode(true);
+      if (textParam) {
+        try {
+          const decodedText = base64ToUtf8(textParam);
+          setText(decodedText);
+        } catch (e) {
+          console.error("Failed to decode text from URL", e);
+        }
+      }
+      if (musicParam) {
+        const musicAsset = musicAssets.find(m => m.path.endsWith(musicParam));
+        if (musicAsset) {
+          setMusicUrl(musicAsset.path);
+          if (audioRef.current) audioRef.current.src = musicAsset.path;
+        }
+      }
+      if (imageParam) {
+        const imageAsset = imageAssets.find(i => i.path.endsWith(imageParam));
+        if (imageAsset) {
+          setBackgroundImage(imageAsset.path);
+          setBgUrl(imageAsset.path);
+        }
+      }
+      if (hebrewParam) {
+        setIsHebrew(hebrewParam === 'true');
+      }
+      setPresentationDataLoaded(true);
+    }
+  }, []);
 
   // Effect to update background image when bgUrl state changes
   useEffect(() => {
@@ -30,11 +115,19 @@ const App: React.FC = () => {
           setBackgroundImage('');
       }
   }, [bgUrl]);
+
+  useEffect(() => {
+    if (audioRef.current && musicUrl) {
+      audioRef.current.src = musicUrl;
+    }
+  }, [musicUrl]);
   
   // Effect to change default text when Hebrew mode is toggled
   useEffect(() => {
-    setText(isHebrew ? 'שלום' : 'HELLO');
-  }, [isHebrew]);
+    if (!isPresentationMode) {
+      setText(isHebrew ? 'שלום' : 'HELLO');
+    }
+  }, [isHebrew, isPresentationMode]);
 
 
   const setupAudioContext = () => {
@@ -57,41 +150,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleFileChange = (file: File, callback: (dataUrl: string) => void) => {
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        callback(dataUrl);
-    };
-    reader.onerror = () => {
-        alert("Could not read the file. Please try again.");
-    };
-    reader.readAsDataURL(file);
-  };
   
-  const handleAudioFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !audioRef.current) return;
-    setupAudioContext();
-    handleFileChange(file, (dataUrl) => {
-        if (audioRef.current) {
-            const audio = audioRef.current;
-            
-            const playWhenReady = () => {
-                audio.play().catch(e => {
-                    console.warn("Autoplay was prevented by the browser.", e);
-                });
-                audio.removeEventListener('canplay', playWhenReady);
-            };
-            audio.addEventListener('canplay', playWhenReady);
-
-            audio.src = dataUrl;
-            setMusicUrl(dataUrl);
-        }
-    });
-  };
+  
+  
 
   const handleMusicUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -101,31 +162,45 @@ const App: React.FC = () => {
     }
   }
   
-  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    handleFileChange(file, (dataUrl) => {
-        setBackgroundImage(dataUrl);
-        setBgUrl(dataUrl);
-    });
+  
+
+  const handlePlayPauseClick = () => {
+    if (!audioContextRef.current) {
+      setupAudioContext();
+    }
+
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        if (audioRef.current.src && audioRef.current.src !== window.location.href) {
+          audioRef.current.play().catch(e => {
+            console.error("Audio play failed", e);
+            setAudioError("Could not play the audio. The file might be corrupt or in an unsupported format.");
+          });
+        } else {
+          if (!isPresentationMode) {
+            alert('Please provide a music URL or upload a local file first.');
+          }
+        }
+      }
+    }
   };
 
-  const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+  const generateShareableLink = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const params = new URLSearchParams();
+    params.set('text', utf8ToBase64(text));
+    params.set('hebrew', isHebrew ? 'true' : 'false');
+    if (musicUrl) {
+      const musicFile = musicUrl.split('/').pop();
+      if(musicFile) params.set('music', musicFile);
     }
-  };
-  
-  const handlePlayPauseClick = () => {
-    setupAudioContext();
-    if (!audioRef.current?.src || audioRef.current.src === window.location.href) { // Check if src is empty or just the base URL
-      alert('Please provide a music URL or upload a local file first.');
-    } else {
-      togglePlayPause();
+    if (bgUrl) {
+      const imageFile = bgUrl.split('/').pop();
+      if(imageFile) params.set('image', imageFile);
     }
+    setShareableLink(`${baseUrl}?${params.toString()}`);
   };
 
   const ShapeButton: React.FC<{shape: ParticleShape; currentShape: ParticleShape; setShape: (shape: ParticleShape) => void; children: React.ReactNode;}> = 
@@ -140,6 +215,37 @@ const App: React.FC = () => {
       {children}
     </button>
   );
+
+  if (isPresentationMode) {
+    return (
+      <main 
+        className="relative w-screen h-screen overflow-hidden bg-black bg-cover bg-center transition-all duration-1000"
+        style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
+      >
+
+        <div className="absolute bottom-4 right-4 z-10">
+          <button
+            onClick={handlePlayPauseClick}
+            className="px-4 py-2 font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-green-500"
+            aria-label={isPlaying ? 'Pause music' : 'Play music'}
+          >
+            {isPlaying ? 'Pause Music' : 'Play Music'}
+          </button>
+        </div>
+        <audio 
+          ref={audioRef} 
+          crossOrigin="anonymous" 
+          className="hidden"
+          onPlay={() => { setIsPlaying(true); setAudioError(null); }}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        ></audio>
+        {presentationDataLoaded && 
+          <ParticleCanvas analyser={analyser} musicSensitivity={musicSensitivity} particleShape={particleShape} text={text} isHebrew={isHebrew} />
+        }
+      </main>
+    )
+  }
 
   return (
     <main 
@@ -199,26 +305,40 @@ const App: React.FC = () => {
             </div>
           </div>
 
+        {/* Asset Selection */}
+        <div className="w-full pt-3 mt-1 border-t border-gray-700 space-y-2">
+          <select onChange={(e) => { setMusicUrl(e.target.value); if(audioRef.current) audioRef.current.src = e.target.value; }} value={musicUrl} className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Music</option>
+            {musicAssets.map(asset => <option key={asset.path} value={asset.path}>{asset.name}</option>)}
+          </select>
+          <select onChange={(e) => setBgUrl(e.target.value)} value={bgUrl} className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Image</option>
+            {imageAssets.map(asset => <option key={asset.path} value={asset.path}>{asset.name}</option>)}
+          </select>
+        </div>
+
         {/* URL Inputs */}
         <div className="w-full pt-3 mt-1 border-t border-gray-700 space-y-2">
             <input type="text" value={musicUrl.startsWith('data:') ? 'Local File Uploaded' : musicUrl} onChange={handleMusicUrlChange} readOnly={musicUrl.startsWith('data:')} className="w-full bg-gray-800 text-white placeholder-gray-500 border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder="Paste Music URL (.mp3, etc)..." />
             <input type="text" value={bgUrl.startsWith('data:') ? 'Local File Uploaded' : bgUrl} onChange={(e) => setBgUrl(e.target.value)} readOnly={bgUrl.startsWith('data:')} className="w-full bg-gray-800 text-white placeholder-gray-500 border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" placeholder="Paste Background Image URL..." />
         </div>
         
-        {/* Local File Uploads Section */}
+        
+
+        {/* Share Section */}
         <div className="w-full pt-3 mt-1 border-t border-gray-700 space-y-2">
-            <div className="flex space-x-2">
-              <button onClick={() => audioFileInputRef.current?.click()} className="w-full flex items-center justify-center px-4 py-2 font-semibold text-white bg-gray-700 rounded-lg shadow-md hover:bg-gray-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l7-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm7-13c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 6l7-3" /></svg>
-                  Upload Music
-              </button>
-              <button onClick={() => imageFileInputRef.current?.click()} className="w-full flex items-center justify-center px-4 py-2 font-semibold text-white bg-gray-700 rounded-lg shadow-md hover:bg-gray-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
-                  Upload Image
+          <button onClick={generateShareableLink} className="w-full flex items-center justify-center px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" /></svg>
+            Generate Shareable Link
+          </button>
+          {shareableLink && (
+            <div className="flex items-center space-x-2 pt-2">
+              <input type="text" readOnly value={shareableLink} className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg py-2 px-4" />
+              <button onClick={() => navigator.clipboard.writeText(shareableLink)} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-green-500">
+                Copy
               </button>
             </div>
-            <input id="audio-upload" ref={audioFileInputRef} type="file" accept="audio/*" onChange={handleAudioFileChange} className="hidden" />
-            <input id="image-upload" ref={imageFileInputRef} type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
+          )}
         </div>
       </div>
 

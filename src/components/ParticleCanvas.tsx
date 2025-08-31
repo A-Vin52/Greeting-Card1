@@ -280,9 +280,13 @@ const ParticleCanvas: React.FC<ParticleCanvasProps> = ({ analyser, musicSensitiv
             if (isHebrew) {
                 const segments = getBidiSegments(line);
                 const segmentMetrics = segments.map(seg => ({ ...seg, width: ctx.measureText(seg.text).width }));
+
+                // Reverse the visual order of segments for RTL layout
+                segmentMetrics.reverse();
+
                 const totalLineWidth = segmentMetrics.reduce((sum, seg) => sum + seg.width, 0);
 
-                let currentLineX = (canvas.width + totalLineWidth) / 2;
+                let currentLineX = (canvas.width - totalLineWidth) / 2;
 
                 for (const segment of segmentMetrics) {
                     if (segment.dir === 'rtl') {
@@ -290,26 +294,25 @@ const ParticleCanvas: React.FC<ParticleCanvasProps> = ({ analyser, musicSensitiv
                         for (const char of segment.text) {
                             const charMetrics = ctx.measureText(char);
                             if (char !== ' ') {
-                                const targetX = currentLineX - currentSegmentXOffset - charMetrics.width / 2;
+                                const targetX = currentLineX + segment.width - currentSegmentXOffset - charMetrics.width / 2;
                                 const p = new Particle(particleShape, char, targetX, yOffset, canvas.width, canvas.height);
                                 characterParticles.push(p);
                             }
                             currentSegmentXOffset += charMetrics.width;
                         }
                     } else { // LTR segment
-                        const segmentStartX = currentLineX - segment.width;
                         let currentSegmentXOffset = 0;
                         for (const char of segment.text) {
                             const charMetrics = ctx.measureText(char);
                             if (char !== ' ') {
-                                const targetX = segmentStartX + currentSegmentXOffset + charMetrics.width / 2;
+                                const targetX = currentLineX + currentSegmentXOffset + charMetrics.width / 2;
                                 const p = new Particle(particleShape, char, targetX, yOffset, canvas.width, canvas.height);
                                 characterParticles.push(p);
                             }
                             currentSegmentXOffset += charMetrics.width;
                         }
                     }
-                    currentLineX -= segment.width;
+                    currentLineX += segment.width;
                 }
             } else { // Standard LTR logic
                 const textMetrics = ctx.measureText(line);
