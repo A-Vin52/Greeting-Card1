@@ -8,6 +8,12 @@
     
 
 <link rel="stylesheet" href="/index.css">
+<script>
+  // If this is a 404 page, redirect to the correct path
+  if (window.location.pathname !== '/') {
+    window.location.pathname = '/';
+  }
+</script>
   <script type="importmap">
 {
   "imports": {
