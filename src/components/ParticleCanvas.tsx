@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 
-type ParticleShape = 'circle' | 'square' | 'triangle';
+type ParticleShape = 'circle' | 'square' | 'triangle' | 'pomegranate';
 
 interface ParticleCanvasProps {
   analyser: AnalyserNode | null;
@@ -46,7 +46,7 @@ class Particle {
     this.vx = (Math.random() - 0.5) * 0.5;
     this.vy = (Math.random() - 0.5) * 0.5;
     this.character = character;
-    this.baseRadius = this.character ? FONT_SIZE / 2 : Math.random() * 2 + 1;
+    this.baseRadius = this.character ? FONT_SIZE / 2 : Math.random() * 3 + 2; // Increased size
     this.radius = this.baseRadius;
     this.alpha = 0.5;
     this.hue = Math.random() * 360;
@@ -112,19 +112,23 @@ class Particle {
   }
 
   draw(context: CanvasRenderingContext2D) {
-    const color = `hsl(${this.hue}, 100%, 80%)`;
     context.save();
     context.globalAlpha = this.alpha;
-    context.fillStyle = color;
-    context.shadowColor = color;
-    context.shadowBlur = 25;
-    
+
     if (this.character) {
+        const color = `hsl(${this.hue}, 100%, 80%)`;
+        context.fillStyle = color;
+        context.shadowColor = color;
+        context.shadowBlur = 25;
         context.font = FONT;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(this.character, this.x, this.y);
     } else {
+        const color = this.shape === 'pomegranate' ? `hsl(340, 90%, 60%)` : `hsl(${this.hue}, 100%, 80%)`;
+        context.fillStyle = color;
+        context.shadowColor = color;
+        context.shadowBlur = 25;
         context.beginPath();
         switch(this.shape) {
             case 'square':
@@ -138,12 +142,24 @@ class Particle {
                 context.lineTo(this.x + side / 2, this.y + h / 2);
                 context.closePath();
                 break;
+            case 'pomegranate':
+                const seedRadiusX = this.radius * 1.5;
+                const seedRadiusY = this.radius * 0.7;
+                context.ellipse(this.x, this.y, seedRadiusX, seedRadiusY, Math.random() * Math.PI * 2, 0, Math.PI * 2);
+                break;
             case 'circle':
             default:
                 context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
                 break;
         }
         context.fill();
+
+        if (this.shape === 'pomegranate') {
+            context.fillStyle = 'hsla(340, 90%, 80%, 0.7)';
+            context.beginPath();
+            context.arc(this.x + this.radius * 0.2, this.y - this.radius * 0.2, this.radius * 0.3, 0, Math.PI * 2);
+            context.fill();
+        }
     }
     context.restore();
   }

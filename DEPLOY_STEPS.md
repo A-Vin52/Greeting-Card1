@@ -2,7 +2,24 @@
 
 This guide provides the steps to deploy your project to GitHub Pages after making changes.
 
-## Step-by-Step Guide
+## How to Test Your Changes Locally
+
+Before deploying, you can test your changes on your own computer using a local development server.
+
+1.  **Start the development server:**
+    Open a terminal in the project's root directory and run the following command:
+
+    ```bash
+    npm run dev
+    ```
+
+2.  **View your application:**
+    This command will start a local server. Open your web browser and navigate to the URL provided in the terminal (it's usually something like `http://localhost:5173`). You will see your application running.
+
+3.  **Stopping the server:**
+    To stop the local server, go back to your terminal and press `Ctrl + C`.
+
+## Step-by-Step Guide to Deploy
 
 ### Step 1: Make Your Changes
 

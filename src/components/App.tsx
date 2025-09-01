@@ -2,22 +2,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ParticleCanvas from './ParticleCanvas';
 
-type ParticleShape = 'circle' | 'square' | 'triangle';
+type ParticleShape = 'circle' | 'square' | 'triangle' | 'pomegranate';
 
 const musicAssets = [
-  { name: 'HB Hebrew', path: '/Greeting-Card1/assets/music/HB_Hebrew.mp3' },
+  { name: 'HB Hebrew', path: '/assets/music/HappyBirtday/HB_Hebrew.mp3' },
+  { name: 'Shana Tova', path: '/assets/music/ShanaTova/ShanaTova2.mp3' },
 ];
 
 const imageAssets = [
-  { name: 'Cosmos 1', path: '/Greeting-Card1/assets/images/Cosmos10.425Z.png' },
-  { name: 'Cosmos 2', path: '/Greeting-Card1/assets/images/Cosmos11.png' },
-  { name: 'Cosmos 3', path: '/Greeting-Card1/assets/images/Cosmos12.png' },
-  { name: 'Cosmos 4', path: '/Greeting-Card1/assets/images/Cosmos4.324Z.png' },
-  { name: 'Cosmos 5', path: '/Greeting-Card1/assets/images/Cosmos5.png' },
-  { name: 'Cosmos 6', path: '/Greeting-Card1/assets/images/Cosmos6.png' },
-  { name: 'Cosmos 7', path: '/Greeting-Card1/assets/images/Cosmos7.png' },
-  { name: 'Cosmos 8', path: '/Greeting-Card1/assets/images/Cosmos8.png' },
-  { name: 'Cosmos 9', path: '/Greeting-Card1/assets/images/Cosmos9.png' },
+  { name: 'Cosmos 1', path: '/assets/images/Cosmos/Cosmos10.425Z.png' },
+  { name: 'Cosmos 2', path: '/assets/images/Cosmos/Cosmos11.png' },
+  { name: 'Cosmos 3', path: '/assets/images/Cosmos/Cosmos12.png' },
+  { name: 'Cosmos 4', path: '/assets/images/Cosmos/Cosmos4.324Z.png' },
+  { name: 'Cosmos 5', path: '/assets/images/Cosmos/Cosmos5.png' },
+  { name: 'Cosmos 6', path: '/assets/images/Cosmos/Cosmos6.png' },
+  { name: 'Cosmos 7', path: '/assets/images/Cosmos/Cosmos7.png' },
+  { name: 'Cosmos 8', path: '/assets/images/Cosmos/Cosmos8.png' },
+  { name: 'Cosmos 9', path: '/assets/images/Cosmos/Cosmos9.png' },
+  { name: 'Seeds 1', path: '/assets/images/Seeds/Seeds1.png' },
+  { name: 'Seeds 2', path: '/assets/images/Seeds/Seeds2.png' },
 ];
 
 // Helper functions for UTF-8 safe Base64 encoding/decoding
@@ -75,6 +78,7 @@ const App: React.FC = () => {
     const musicParam = params.get('music');
     const imageParam = params.get('image');
     const hebrewParam = params.get('hebrew');
+    const shapeParam = params.get('shape') as ParticleShape;
 
     if (textParam || musicParam || imageParam) {
       setIsPresentationMode(true);
@@ -102,6 +106,9 @@ const App: React.FC = () => {
       }
       if (hebrewParam) {
         setIsHebrew(hebrewParam === 'true');
+      }
+      if (shapeParam) {
+        setParticleShape(shapeParam);
       }
       setPresentationDataLoaded(true);
     }
@@ -192,6 +199,7 @@ const App: React.FC = () => {
     const params = new URLSearchParams();
     params.set('text', utf8ToBase64(text));
     params.set('hebrew', isHebrew ? 'true' : 'false');
+    params.set('shape', particleShape);
     if (musicUrl) {
       const musicFile = musicUrl.split('/').pop();
       if(musicFile) params.set('music', musicFile);
@@ -287,6 +295,7 @@ const App: React.FC = () => {
             <ShapeButton shape="circle" currentShape={particleShape} setShape={setParticleShape}><svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Z" /></svg></ShapeButton>
             <ShapeButton shape="square" currentShape={particleShape} setShape={setParticleShape}><svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M3,3V21H21V3Z" /></svg></ShapeButton>
             <ShapeButton shape="triangle" currentShape={particleShape} setShape={setParticleShape}><svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M1,21H23L12,2Z" /></svg></ShapeButton>
+            <ShapeButton shape="pomegranate" currentShape={particleShape} setShape={setParticleShape}><svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.5 15.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3-5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" /></svg></ShapeButton>
           </div>
         </div>
         
