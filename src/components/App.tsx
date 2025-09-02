@@ -1,26 +1,25 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import ParticleCanvas from './ParticleCanvas';
 
 type ParticleShape = 'circle' | 'square' | 'triangle' | 'pomegranate';
 
 const musicAssets = [
-  { name: 'HB Hebrew', path: '/assets/music/HappyBirtday/HB_Hebrew.mp3' },
-  { name: 'Shana Tova', path: '/assets/music/ShanaTova/ShanaTova2.mp3' },
+  { name: 'HB Hebrew', path: 'assets/music/HB_Hebrew.mp3' },
+  { name: 'Shana Tova', path: 'assets/music/ShanaTova2.mp3' },
 ];
 
 const imageAssets = [
-  { name: 'Cosmos 1', path: '/assets/images/Cosmos/Cosmos10.425Z.png' },
-  { name: 'Cosmos 2', path: '/assets/images/Cosmos/Cosmos11.png' },
-  { name: 'Cosmos 3', path: '/assets/images/Cosmos/Cosmos12.png' },
-  { name: 'Cosmos 4', path: '/assets/images/Cosmos/Cosmos4.324Z.png' },
-  { name: 'Cosmos 5', path: '/assets/images/Cosmos/Cosmos5.png' },
-  { name: 'Cosmos 6', path: '/assets/images/Cosmos/Cosmos6.png' },
-  { name: 'Cosmos 7', path: '/assets/images/Cosmos/Cosmos7.png' },
-  { name: 'Cosmos 8', path: '/assets/images/Cosmos/Cosmos8.png' },
-  { name: 'Cosmos 9', path: '/assets/images/Cosmos/Cosmos9.png' },
-  { name: 'Seeds 1', path: '/assets/images/Seeds/Seeds1.png' },
-  { name: 'Seeds 2', path: '/assets/images/Seeds/Seeds2.png' },
+  { name: 'Cosmos 1', path: 'assets/images/Cosmos10.425Z.png' },
+  { name: 'Cosmos 2', path: 'assets/images/Cosmos11.png' },
+  { name: 'Cosmos 3', path: 'assets/images/Cosmos12.png' },
+  { name: 'Cosmos 4', path: 'assets/images/Cosmos4.324Z.png' },
+  { name: 'Cosmos 5', path: 'assets/images/Cosmos5.png' },
+  { name: 'Cosmos 6', path: 'assets/images/Cosmos6.png' },
+  { name: 'Cosmos 7', path: 'assets/images/Cosmos7.png' },
+  { name: 'Cosmos 8', path: 'assets/images/Cosmos8.png' },
+  { name: 'Cosmos 9', path: 'assets/images/Cosmos9.png' },
+  { name: 'Seeds 1', path: 'assets/images/Seeds1.png' },
+  { name: 'Seeds 2', path: 'assets/images/Seeds2.png' },
 ];
 
 // Helper functions for UTF-8 safe Base64 encoding/decoding
@@ -121,13 +120,13 @@ const App: React.FC = () => {
       } else {
           setBackgroundImage('');
       }
-  }, [bgUrl]);
+  }, [bgUrl, particleShape]);
 
   useEffect(() => {
     if (audioRef.current && musicUrl) {
       audioRef.current.src = musicUrl;
     }
-  }, [musicUrl]);
+  }, [musicUrl, particleShape]);
   
   // Effect to change default text when Hebrew mode is toggled
   useEffect(() => {
